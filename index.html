@@ -425,21 +425,29 @@
             const noPetsMessage = document.getElementById('noPetsMessage');
             const currentQrPetName = document.getElementById('currentQrPetName');
             
-            let pets = JSON.parse(localStorage.getItem('pets')) || [];
-            
+            // --- INICIALIZAÇÃO ROBUSTA DA VARIÁVEL PETS ---
+            let pets = [];
+            try {
+                const storedPets = localStorage.getItem('pets');
+                pets = storedPets ? JSON.parse(storedPets) : [];
+            } catch (e) {
+                console.error("Erro ao carregar pets do Local Storage:", e);
+                pets = []; 
+            }
+            // -----------------------------------------------
+
             updatePetList();
             
-            // URL de placeholder padrão caso a imagem não seja fornecida
             const defaultImageUrl = 'https://via.placeholder.com/80/3A3A3A/FFFFFF?text=Pet';
 
             petForm.addEventListener('submit', function(e) {
                 e.preventDefault();
                 
-                // Coleta de dados (Incluindo o novo campo petImageUrl)
+                // Coleta de dados
                 const petNameInput = document.getElementById('petName').value;
                 const petTypeInput = document.getElementById('petType').value;
                 const petBreedInput = document.getElementById('petBreed').value || 'Não Informada';
-                const petImageUrlInput = document.getElementById('petImageUrl').value.trim(); // Novo campo
+                const petImageUrlInput = document.getElementById('petImageUrl').value.trim(); 
 
                 const petData = {
                     id: Date.now().toString(), 
@@ -454,13 +462,20 @@
                     city: document.getElementById('city').value, 
                     additionalInfo: document.getElementById('additionalInfo').value,
                     date: new Date().toLocaleDateString('pt-BR'),
-                    // ATRIBUIÇÃO DA IMAGEM: Usa a URL fornecida ou a URL padrão
                     imageUrl: petImageUrlInput || defaultImageUrl 
                 };
                 
-                // Salva no Local Storage
-                pets.push(petData);
-                localStorage.setItem('pets', JSON.stringify(pets));
+                // --- CÓDIGO DE SALVAMENTO REVISADO ---
+                try {
+                    pets.push(petData);
+                    localStorage.setItem('pets', JSON.stringify(pets));
+                    console.log("Pet salvo com sucesso no Local Storage.");
+                } catch (error) {
+                    console.error("Erro ao salvar no Local Storage:", error);
+                    alert("Erro ao salvar os dados do pet. Tente novamente.");
+                    return; 
+                }
+                // -------------------------------------
                 
                 // Geração do QR Code
                 generateQRCodeURL(petData.id, petData.name); 
@@ -485,8 +500,8 @@
             function generateQRCodeURL(petId, petName) {
                 qrcodeDiv.innerHTML = '';
                 
-                // URL ABSOLUTA CORRETA PARA O GITHUB PAGES (Garantindo que funcione no celular)
-                const qrUrl = `https://gabriellanna2006.github.io/peteid/pet-info.html?id=${petId}`;
+                // URL ABSOLUTA CORRETA PARA O VERCEL
+                const qrUrl = `https://pete-id.vercel.app/pet-info.html?id=${petId}`;
                 
                 new QRCode(qrcodeDiv, {
                     text: qrUrl, 
@@ -513,7 +528,6 @@
                     const petCard = document.createElement('div');
                     petCard.className = 'pet-card';
                     
-                    // A lista também usa a imagem cadastrada (ou a padrão)
                     petCard.innerHTML = `
                         <img src="${pet.imageUrl}" alt="${pet.name}" class="pet-card-image">
                         <div class="pet-card-content">
